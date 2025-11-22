@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('order_number')->unique();
             $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending');
             $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');
-            $table->string('payment_method')->nullable();
+            $table->string('payment_method');
             $table->unsignedInteger('grand_total');
-            $table->json('shipping_address')->nullable();
+            $table->json('shipping_address');
             $table->timestamps();
         });
     }
