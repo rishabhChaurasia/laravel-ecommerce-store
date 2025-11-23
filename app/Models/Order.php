@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Observers\OrderObserver;
 
 class Order extends Model
 {
@@ -28,5 +29,21 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            if (empty($order->order_number)) {
+                $order->order_number = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+            }
+        });
+    }
+
+    protected static function booted()
+    {
+        static::observe(OrderObserver::class);
     }
 }

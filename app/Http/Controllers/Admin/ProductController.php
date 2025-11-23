@@ -45,6 +45,12 @@ class ProductController extends Controller
 
         Product::create($data);
 
+        // Clear related caches when creating a new product
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
+        cache()->forget('new_arrivals');
+        cache()->forget('admin_dashboard_low_stock');
+
         return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
@@ -87,6 +93,12 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        // Clear related caches when updating a product
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
+        cache()->forget('new_arrivals');
+        cache()->forget('admin_dashboard_low_stock');
+
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
@@ -101,6 +113,12 @@ class ProductController extends Controller
         }
 
         $product->delete();
+
+        // Clear related caches when deleting a product
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
+        cache()->forget('new_arrivals');
+        cache()->forget('admin_dashboard_low_stock');
 
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }

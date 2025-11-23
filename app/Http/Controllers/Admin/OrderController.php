@@ -57,6 +57,10 @@ class OrderController extends Controller
 
         $order = Order::create($validated);
 
+        // Clear admin dashboard cache
+        cache()->forget('admin_dashboard_sales');
+        cache()->forget('admin_dashboard_recent_orders');
+
         return redirect()->route('orders.index')->with('success', 'Order created successfully.');
     }
 
@@ -102,6 +106,10 @@ class OrderController extends Controller
 
         $order->update($validated);
 
+        // Clear admin dashboard cache
+        cache()->forget('admin_dashboard_sales');
+        cache()->forget('admin_dashboard_recent_orders');
+
         return redirect()->route('orders.index')->with('success', 'Order updated successfully.');
     }
 
@@ -111,6 +119,10 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         $order->delete();
+
+        // Clear admin dashboard cache
+        cache()->forget('admin_dashboard_sales');
+        cache()->forget('admin_dashboard_recent_orders');
 
         return redirect()->route('orders.index')->with('success', 'Order deleted successfully.');
     }
@@ -125,6 +137,10 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+
+        // Clear admin dashboard cache
+        cache()->forget('admin_dashboard_sales');
+        cache()->forget('admin_dashboard_recent_orders');
 
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }

@@ -48,4 +48,9 @@ class Product extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function userWishlist($userId)
+    {
+        return $this->wishlists()->where('user_id', $userId)->exists();
+    }
 }

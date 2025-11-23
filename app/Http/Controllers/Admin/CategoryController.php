@@ -44,6 +44,10 @@ class CategoryController extends Controller
 
         Category::create($data);
 
+        // Clear related caches when creating a new category
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
+
         return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
@@ -86,6 +90,10 @@ class CategoryController extends Controller
 
         $category->update($data);
 
+        // Clear related caches when updating a category
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
+
         return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
 
@@ -100,6 +108,10 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+
+        // Clear related caches when deleting a category
+        cache()->forget('featured_categories');
+        cache()->forget('all_categories');
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }

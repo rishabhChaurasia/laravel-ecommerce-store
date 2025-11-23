@@ -14,21 +14,28 @@ class AdminController extends Controller
      */
     public function index()
     {
-        // Calculate total sales revenue from completed orders
-        $totalSalesRevenue = Order::whereIn('status', ['processing', 'shipped', 'delivered'])
-            ->sum('grand_total');
+        // Cache total sales revenue for 15 minutes (900 seconds)
+        $totalSalesRevenue = cache()->remember('admin_dashboard_sales', 900, function () {
+            // Calculate total sales revenue from completed orders
+            $sales = Order::whereIn('status', ['processing', 'shipped', 'delivered'])
+                ->sum('grand_total');
 
-        // Convert from cents to dollars for display
-        $totalSalesRevenue = $totalSalesRevenue / 100;
+            // Convert from cents to dollars for display
+            return $sales / 100;
+        });
 
-        // Get low stock products (stock <= 10 and active)
-        $lowStockProducts = Product::where('stock_quantity', '<=', 10)
-            ->where('is_active', true)
-            ->orderBy('stock_quantity', 'asc')
-            ->get();
+        // Cache low stock products for 15 minutes (900 seconds)
+        $lowStockProducts = cache()->remember('admin_dashboard_low_stock', 900, function () {
+            return Product::where('stock_quantity', '<=', 10)
+                ->where('is_active', true)
+                ->orderBy('stock_quantity', 'asc')
+                ->get();
+        });
 
-        // Get recent orders to display on dashboard
-        $recentOrders = Order::with('user')->latest()->take(5)->get();
+        // Cache recent orders for 15 minutes (900 seconds)
+        $recentOrders = cache()->remember('admin_dashboard_recent_orders', 900, function () {
+            return Order::with('user')->latest()->take(5)->get();
+        });
 
         return view('admin.dashboard', compact('totalSalesRevenue', 'lowStockProducts', 'recentOrders'));
     }

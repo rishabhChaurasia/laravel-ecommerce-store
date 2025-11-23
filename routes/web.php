@@ -3,9 +3,47 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController; // Import AdminController
+use App\Http\Controllers\Shop\ShopController;
+use App\Http\Controllers\Shop\ProductController;
+use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\UserController;
+use App\Http\Controllers\Shop\CheckoutController;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', [ShopController::class, 'index'])->name('home');
+
+// Public shop routes
+Route::get('/shop', [ShopController::class, 'shop'])->name('shop.index');
+Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
+
+// Cart routes (public)
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+
+// Wishlist routes (requires auth)
+Route::middleware('auth')->group(function () {
+    Route::post('/wishlist/{product}', [ProductController::class, 'toggleWishlist'])->name('wishlist.toggle');
+    Route::delete('/wishlist/{product}', [UserController::class, 'removeFromWishlist'])->name('wishlist.remove');
+});
+
+// Checkout routes
+Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
+    Route::post('/shipping', [CheckoutController::class, 'storeShipping'])->name('store.shipping');
+    Route::get('/payment', [CheckoutController::class, 'payment'])->name('payment');
+    Route::post('/payment', [CheckoutController::class, 'processPayment'])->name('process.payment');
+    Route::post('/create-payment-intent', [CheckoutController::class, 'createPaymentIntent'])->name('create-payment-intent');
+    Route::get('/success/{order}', [CheckoutController::class, 'success'])->name('success');
+});
+
+// User account routes (requires auth)
+Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
+    Route::get('/', [UserController::class, 'dashboard'])->name('dashboard');
+    Route::get('/orders', [UserController::class, 'orderHistory'])->name('orders');
+    Route::get('/orders/{order}', [UserController::class, 'orderDetails'])->name('order.details');
+    Route::get('/wishlist', [UserController::class, 'wishlist'])->name('wishlist');
 });
 
 Route::get('/dashboard', function () {

@@ -254,104 +254,116 @@ class MarketingController extends Controller
 
     public function stockReportData(Request $request)
     {
-        // Get stock data for reporting
-        $period = $request->get('period', 'monthly');
+        // Create cache key based on request parameters
+        $cacheKey = 'stock_report_data_' . md5(serialize($request->all()));
 
-        // For this example, we'll return mock data
-        $stockData = [
-            ['date' => now()->format('Y-m-d'), 'quantity' => 500],
-            ['date' => now()->subDay()->format('Y-m-d'), 'quantity' => 520],
-            ['date' => now()->subDays(2)->format('Y-m-d'), 'quantity' => 480],
-        ];
+        // Cache for 1 hour (3600 seconds)
+        return cache()->remember($cacheKey, 3600, function () use ($request) {
+            // Get stock data for reporting
+            $period = $request->get('period', 'monthly');
 
-        $lowStockAlerts = \App\Models\Product::where('stock_quantity', '<=', 5)
-            ->where('is_active', true)
-            ->select('name', 'stock_quantity', 'sku')
-            ->get();
+            // For this example, we'll return mock data
+            $stockData = [
+                ['date' => now()->format('Y-m-d'), 'quantity' => 500],
+                ['date' => now()->subDay()->format('Y-m-d'), 'quantity' => 520],
+                ['date' => now()->subDays(2)->format('Y-m-d'), 'quantity' => 480],
+            ];
 
-        return response()->json([
-            'stock_data' => $stockData,
-            'low_stock_alerts' => $lowStockAlerts,
-        ]);
+            $lowStockAlerts = \App\Models\Product::where('stock_quantity', '<=', 5)
+                ->where('is_active', true)
+                ->select('name', 'stock_quantity', 'sku')
+                ->get();
+
+            return response()->json([
+                'stock_data' => $stockData,
+                'low_stock_alerts' => $lowStockAlerts,
+            ])->getData(true);
+        });
     }
 
     public function salesReportData(Request $request)
     {
-        $period = $request->get('period', 'monthly');
-        $start_date = $request->get('start_date');
-        $end_date = $request->get('end_date');
+        // Create cache key based on request parameters
+        $cacheKey = 'sales_report_data_' . md5(serialize($request->all()));
 
-        $query = \App\Models\Order::query();
+        // Cache for 1 hour (3600 seconds)
+        return cache()->remember($cacheKey, 3600, function () use ($request) {
+            $period = $request->get('period', 'monthly');
+            $start_date = $request->get('start_date');
+            $end_date = $request->get('end_date');
 
-        // Filter by date range if provided
-        if ($start_date && $end_date) {
-            $query->whereBetween('created_at', [$start_date, $end_date]);
-        } elseif ($start_date) {
-            $query->whereDate('created_at', '>=', $start_date);
-        } elseif ($end_date) {
-            $query->whereDate('created_at', '<=', $end_date);
-        }
+            $query = \App\Models\Order::query();
 
-        // Filter by status (only completed orders count as sales)
-        $query->whereIn('status', ['processing', 'shipped', 'delivered']);
+            // Filter by date range if provided
+            if ($start_date && $end_date) {
+                $query->whereBetween('created_at', [$start_date, $end_date]);
+            } elseif ($start_date) {
+                $query->whereDate('created_at', '>=', $start_date);
+            } elseif ($end_date) {
+                $query->whereDate('created_at', '<=', $end_date);
+            }
 
-        if ($period === 'daily') {
-            // Group by day for daily report
-            $salesData = $query
-                ->selectRaw('DATE(created_at) as date, SUM(grand_total) as total')
-                ->groupBy('date')
-                ->orderBy('date', 'desc')
-                ->limit(30) // Last 30 days
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'date' => $item->date,
-                        'total' => $item->total / 100 // Convert from cents to dollars
-                    ];
-                })
-                ->values()
-                ->toArray();
-        } else {
-            // Monthly report
-            $salesData = $query
-                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(grand_total) as total')
-                ->groupBy('month')
-                ->orderBy('month', 'desc')
-                ->limit(12) // Last 12 months
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'month' => $item->month,
-                        'total' => $item->total / 100 // Convert from cents to dollars
-                    ];
-                })
-                ->values()
-                ->toArray();
-        }
+            // Filter by status (only completed orders count as sales)
+            $query->whereIn('status', ['processing', 'shipped', 'delivered']);
 
-        // Get top selling products
-        $orderItems = \DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->select('products.name', \DB::raw('SUM(order_items.quantity) as total_quantity'), \DB::raw('SUM(order_items.quantity * order_items.unit_price) as total_revenue'))
-            ->where('orders.status', 'delivered') // Only count delivered orders
-            ->groupBy('products.id', 'products.name')
-            ->orderBy('total_quantity', 'desc')
-            ->limit(10) // Top 10 selling products
-            ->get();
+            if ($period === 'daily') {
+                // Group by day for daily report
+                $salesData = $query
+                    ->selectRaw('DATE(created_at) as date, SUM(grand_total) as total')
+                    ->groupBy('date')
+                    ->orderBy('date', 'desc')
+                    ->limit(30) // Last 30 days
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'date' => $item->date,
+                            'total' => $item->total / 100 // Convert from cents to dollars
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+            } else {
+                // Monthly report
+                $salesData = $query
+                    ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(grand_total) as total')
+                    ->groupBy('month')
+                    ->orderBy('month', 'desc')
+                    ->limit(12) // Last 12 months
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'month' => $item->month,
+                            'total' => $item->total / 100 // Convert from cents to dollars
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+            }
 
-        $topProducts = $orderItems->map(function ($item) {
-            return [
-                'name' => $item->name,
-                'quantity' => $item->total_quantity,
-                'revenue' => $item->total_revenue / 100 // Convert from cents to dollars
-            ];
-        })->values()->toArray();
+            // Get top selling products
+            $orderItems = \DB::table('order_items')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->select('products.name', \DB::raw('SUM(order_items.quantity) as total_quantity'), \DB::raw('SUM(order_items.quantity * order_items.unit_price) as total_revenue'))
+                ->where('orders.status', 'delivered') // Only count delivered orders
+                ->groupBy('products.id', 'products.name')
+                ->orderBy('total_quantity', 'desc')
+                ->limit(10) // Top 10 selling products
+                ->get();
 
-        return response()->json([
-            'sales_data' => $salesData,
-            'top_products' => $topProducts,
-        ]);
+            $topProducts = $orderItems->map(function ($item) {
+                return [
+                    'name' => $item->name,
+                    'quantity' => $item->total_quantity,
+                    'revenue' => $item->total_revenue / 100 // Convert from cents to dollars
+                ];
+            })->values()->toArray();
+
+            return response()->json([
+                'sales_data' => $salesData,
+                'top_products' => $topProducts,
+            ])->getData(true);
+        });
     }
 
     public function conversionRate()
