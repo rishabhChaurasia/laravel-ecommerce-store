@@ -68,7 +68,15 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        return view('shop.checkout.shipping', compact('user'));
+        // Calculate totals
+        $cartTotal = 0;
+        foreach ($cartItems as $item) {
+            $price = $item->product ? $item->product->price : $item['price'];
+            $quantity = $item->quantity ?? $item['quantity'];
+            $cartTotal += $price * $quantity;
+        }
+
+        return view('shop.checkout.shipping', compact('user', 'cartItems', 'cartTotal'));
     }
 
     /**
@@ -80,6 +88,7 @@ class CheckoutController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'apartment' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:255',
             'zipcode' => 'required|string|max:20',
@@ -91,6 +100,7 @@ class CheckoutController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'address' => $request->address,
+            'apartment' => $request->apartment,
             'city' => $request->city,
             'state' => $request->state,
             'zipcode' => $request->zipcode,

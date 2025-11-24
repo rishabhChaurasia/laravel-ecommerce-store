@@ -1,98 +1,122 @@
 @extends('layouts.app')
 
 @section('title', 'Shopping Cart')
-@section('header', 'Your Shopping Cart')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
+<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <!-- Success/Error Messages -->
     @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6" role="alert">
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg mb-6" role="alert">
             {{ session('success') }}
         </div>
     @endif
     
     @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg mb-6" role="alert">
             {{ session('error') }}
         </div>
     @endif
     
     @if(!$cartItems->isEmpty())
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="cart-items">
+        <div class="flex flex-col gap-8">
+            <!-- Breadcrumbs -->
+            <nav class="flex flex-wrap gap-2">
+                <a class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal hover:text-gray-700 dark:hover:text-gray-300" href="{{ route('home') }}">Home</a>
+                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">/</span>
+                <a class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal hover:text-gray-700 dark:hover:text-gray-300" href="{{ route('shop.index') }}">Shop</a>
+                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">/</span>
+                <span class="text-slate-800 dark:text-white text-sm font-medium leading-normal">Your Shopping Cart</span>
+            </nav>
+            
+            <!-- Page Heading -->
+            <div class="flex flex-wrap justify-between gap-3">
+                <div class="flex min-w-72 flex-col gap-2">
+                    <h1 class="text-slate-800 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">My Cart</h1>
+                    <p class="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">
+                        You have {{ $cartItems->sum('quantity') }} item{{ $cartItems->sum('quantity') != 1 ? 's' : '' }} in your cart.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+                <!-- Left Column: Cart Items -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    @php
+                        $cartTotal = 0;
+                    @endphp
+                    @foreach($cartItems as $item)
                         @php
-                            $cartTotal = 0;
+                            $price = $item->product ? $item->product->price : $item->price;
+                            $subtotal = $price * $item->quantity;
+                            $cartTotal += $subtotal;
                         @endphp
-                        @foreach($cartItems as $item)
-                            @php
-                                $price = $item->product ? $item->product->price : $item->price;
-                                $subtotal = $price * $item->quantity;
-                                $cartTotal += $subtotal;
-                            @endphp
-                            <tr data-product-id="{{ $item->product ? $item->product->id : $item->id }}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        @if($item->product && $item->product->image_path)
-                                            <img src="{{ asset('storage/' . $item->product->image_path) }}" alt="{{ $item->product->name }}" class="h-16 w-16 object-cover">
-                                        @else
-                                            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-500 text-xs">
-                                                No Image
-                                            </div>
-                                        @endif
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
+                        
+                        <!-- Cart Item Card -->
+                        <div class="flex flex-col sm:flex-row gap-6 bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm">
+                            <!-- Product Image -->
+                            <a href="{{ route('product.show', $item->product->slug ?? '#') }}" class="bg-center bg-no-repeat bg-cover rounded-2xl h-48 sm:h-auto sm:w-40 flex-shrink-0 {{ !($item->product && $item->product->image_path) ? 'bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center' : '' }}" 
+                               @if($item->product && $item->product->image_path) 
+                               style="background-image: url('{{ asset('storage/' . $item->product->image_path) }}');"
+                               @endif
+                            >
+                                @if(!($item->product && $item->product->image_path))
+                                    <span class="text-gray-400 dark:text-gray-500 text-sm">No Image</span>
+                                @endif
+                            </a>
+                            
+                            <!-- Product Details -->
+                            <div class="flex-grow flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <a href="{{ route('product.show', $item->product->slug ?? '#') }}">
+                                            <p class="text-slate-800 dark:text-white text-lg font-semibold leading-normal hover:text-zinc-600 dark:hover:text-zinc-300">
                                                 {{ $item->product ? $item->product->name : $item->name }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                SKU: {{ $item->product ? $item->product->sku : $item->sku }}
-                                            </div>
+                                            </p>
+                                        </a>
+                                        <p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">
+                                            SKU: {{ $item->product ? $item->product->sku : $item->sku }}
+                                        </p>
+                                    </div>
+                                    <p class="text-slate-800 dark:text-white text-lg font-semibold leading-normal">
+                                        ${{ number_format($price / 100, 2) }}
+                                    </p>
+                                </div>
+                                
+                                <!-- Quantity Controls -->
+                                <div class="flex items-center gap-4 mt-auto">
+                                    <form method="POST" action="{{ route('cart.update') }}" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="product_id" value="{{ $item->product ? $item->product->id : ($item->product_id ?? $item->id) }}">
+                                        <div class="flex items-center gap-2 text-slate-800 dark:text-white">
+                                            <button type="submit" name="quantity_change" value="-1" class="text-base font-medium leading-normal flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 cursor-pointer transition-colors">-</button>
+                                            <input 
+                                                class="text-base font-medium leading-normal w-12 p-0 text-center bg-transparent focus:outline-none focus:ring-0 focus:border-none border-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" 
+                                                type="number" 
+                                                name="quantity"
+                                                min="1"
+                                                max="10"
+                                                value="{{ $item->quantity }}"
+                                                onchange="this.form.submit()"
+                                            />
+                                            <button type="submit" name="quantity_change" value="1" class="text-base font-medium leading-normal flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 cursor-pointer transition-colors">+</button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ${{ number_format($price / 100, 2) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="flex items-center">
-                                        <form method="POST" action="{{ route('cart.update') }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="product_id" value="{{ $item->product ? $item->product->id : ($item->product_id ?? $item->id) }}">
-                                            <div class="flex">
-                                                <button type="submit" name="quantity_change" value="-1" class="bg-gray-200 hover:bg-gray-300 h-8 w-8 rounded-l text-lg">
-                                                    -
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    name="quantity"
-                                                    min="1"
-                                                    max="10"
-                                                    value="{{ $item->quantity ?? $item->quantity }}"
-                                                    class="quantity-input border-t border-b border-gray-300 h-8 w-16 text-center"
-                                                    onchange="this.form.submit()"
-                                                >
-                                                <button type="submit" name="quantity_change" value="1" class="bg-gray-200 hover:bg-gray-300 h-8 w-8 rounded-r text-lg">
-                                                    +
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ${{ number_format($subtotal / 100, 2) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    </form>
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm">
+                                        Subtotal: <span class="font-semibold text-slate-800 dark:text-white">${{ number_format($subtotal / 100, 2) }}</span>
+                                    </p>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex items-center gap-4 bg-transparent min-h-14 justify-between mt-4 border-t border-gray-200 dark:border-zinc-800 pt-4">
+                                    <button class="flex items-center gap-2 text-slate-800 dark:text-white hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                        </svg>
+                                        <p class="text-sm font-medium leading-normal">Move to Wishlist</p>
+                                    </button>
+                                    
                                     <form 
                                         action="{{ route('cart.remove') }}" 
                                         method="POST" 
@@ -102,126 +126,84 @@
                                         @csrf
                                         @method('DELETE')
                                         <input type="hidden" name="product_id" value="{{ $item->product ? $item->product->id : $item->id }}">
-                                        <button type="submit" class="text-red-600 hover:text-red-900">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        <button type="submit" class="shrink-0 cursor-pointer text-slate-800 dark:text-white hover:text-red-600 dark:hover:text-red-500 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
                                         </button>
                                     </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="mt-8 flex flex-col items-end">
-                <div class="w-full md:w-1/3">
-                    <div class="border-t border-gray-200 pt-4">
-                        <div class="flex justify-between mb-1">
-                            <span>Subtotal</span>
-                            <span id="cart-subtotal">${{ number_format($cartTotal / 100, 2) }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex justify-between mb-1">
-                            <span>Shipping</span>
-                            <span>$0.00</span>
+                    @endforeach
+                </div>
+                
+                <!-- Right Column: Order Summary -->
+                <div class="lg:col-span-1">
+                    <div class="sticky top-24">
+                        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm flex flex-col gap-6">
+                            <h3 class="text-slate-800 dark:text-white text-xl font-bold">Order Summary</h3>
+                            
+                            <div class="flex flex-col gap-3 border-b border-gray-200 dark:border-zinc-800 pb-4">
+                                <div class="flex justify-between">
+                                    <p class="text-gray-500 dark:text-gray-400">Subtotal</p>
+                                    <p class="text-slate-800 dark:text-white font-medium">${{ number_format($cartTotal / 100, 2) }}</p>
+                                </div>
+                                <div class="flex justify-between">
+                                    <p class="text-gray-500 dark:text-gray-400">Shipping Estimate</p>
+                                    <p class="text-slate-800 dark:text-white font-medium">$0.00</p>
+                                </div>
+                                <div class="flex justify-between">
+                                    <p class="text-gray-500 dark:text-gray-400">Tax Estimate</p>
+                                    <p class="text-slate-800 dark:text-white font-medium">$0.00</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between">
+                                <p class="text-slate-800 dark:text-white text-lg font-bold">Total</p>
+                                <p class="text-slate-800 dark:text-white text-lg font-bold">${{ number_format($cartTotal / 100, 2) }}</p>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2">
+                                <label class="text-sm font-medium text-gray-500 dark:text-gray-400" for="promo-code">Promo Code</label>
+                                <div class="flex gap-2">
+                                    <input 
+                                        class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-800 dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#020202]/50 dark:focus:ring-white/50 border border-gray-300 dark:border-zinc-700 bg-transparent h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 text-base font-normal leading-normal" 
+                                        id="promo-code" 
+                                        placeholder="Enter code" 
+                                        type="text"
+                                    />
+                                    <button class="flex items-center justify-center rounded-xl h-12 bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-slate-800 dark:text-white text-sm font-bold px-4 transition-colors whitespace-nowrap">Apply</button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col gap-3 pt-4">
+                                <a href="{{ route('checkout.index') ?? '#' }}" class="flex w-full items-center justify-center overflow-hidden rounded-xl h-12 bg-[#020202] dark:bg-white text-white dark:text-[#020202] gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
+                                    Proceed to Checkout
+                                </a>
+                                <a href="{{ route('shop.index') }}" class="flex w-full items-center justify-center overflow-hidden rounded-xl h-12 text-[#020202] dark:text-white border border-gray-300 dark:border-zinc-700 gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                                    Continue Shopping
+                                </a>
+                            </div>
                         </div>
-                        <div class="flex justify-between mb-1">
-                            <span>Tax</span>
-                            <span>$0.00</span>
-                        </div>
-                        <div class="flex justify-between font-bold text-lg pt-2 border-t border-gray-200">
-                            <span>Total</span>
-                            <span id="cart-total">${{ number_format($cartTotal / 100, 2) }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 flex flex-col sm:flex-row gap-3">
-                        <a href="{{ route('shop.index') }}" class="px-6 py-3 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-gray-50">
-                            Continue Shopping
-                        </a>
-                        <a href="{{ route('checkout.index') ?? '#' }}" class="px-6 py-3 bg-blue-600 text-white rounded-md text-center hover:bg-blue-700">
-                            Proceed to Checkout
-                        </a>
                     </div>
                 </div>
             </div>
         </div>
     @else
-        <div class="bg-white rounded-lg shadow-md p-12 text-center">
-            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        <!-- Empty Cart State -->
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-12 text-center max-w-lg mx-auto">
+            <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684  2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
             </svg>
-            <h3 class="mt-4 text-lg font-medium text-gray-900">Your cart is empty</h3>
-            <p class="mt-1 text-gray-500">Start adding some products to your cart</p>
-            <div class="mt-6">
-                <a href="{{ route('shop.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+            <h3 class="mt-6 text-xl font-bold text-slate-800 dark:text-white">Your cart is empty</h3>
+            <p class="mt-2 text-gray-500 dark:text-gray-400">Start adding some amazing products to your cart</p>
+            <div class="mt-8">
+                <a href="{{ route('shop.index') }}" class="inline-flex items-center px-8 py-3 border border-transparent text-base font-semibold rounded-xl shadow-sm text-white dark:text-[#020202] bg-[#020202] dark:bg-white hover:opacity-90 transition-opacity">
                     Start Shopping
                 </a>
             </div>
         </div>
     @endif
 </div>
-
-@push('scripts')
-<script>
-    // Function to submit quantity form
-    function submitQuantity(input) {
-        input.form.submit();
-    }
-
-    // Function to update quantity via buttons
-    function updateQuantity(button, change) {
-        const form = button.form;
-        const quantityInput = form.querySelector('input[name="quantity"]');
-        let currentQuantity = parseInt(quantityInput.value) || 1;
-
-        if (change === 1) {
-            currentQuantity = Math.min(currentQuantity + 1, 10);
-        } else if (change === -1) {
-            currentQuantity = Math.max(currentQuantity - 1, 1);
-        }
-
-        quantityInput.value = currentQuantity;
-        form.submit();
-    }
-
-    // Update cart badge in header after operations
-    document.addEventListener('DOMContentLoaded', function() {
-        // Count total items in cart
-        let totalItems = 0;
-        const quantityInputs = document.querySelectorAll('.quantity-input[name="quantity"]');
-        quantityInputs.forEach(input => {
-            totalItems += parseInt(input.value) || 0;
-        });
-
-        // Update cart badge in header
-        updateCartBadge(totalItems);
-    });
-
-    function updateCartBadge(count) {
-        // Update desktop cart badge
-        const cartBadgeDesktop = document.querySelector('a[href$="/cart"] span.absolute');
-        if (cartBadgeDesktop) {
-            if (count > 0) {
-                cartBadgeDesktop.textContent = count;
-                cartBadgeDesktop.classList.remove('hidden');
-            } else {
-                cartBadgeDesktop.classList.add('hidden');
-            }
-        }
-
-        // Update mobile cart badge
-        const cartBadgeMobile = document.querySelector('.mobile-menu a[href$="/cart"] span.absolute');
-        if (cartBadgeMobile) {
-            if (count > 0) {
-                cartBadgeMobile.textContent = count;
-                cartBadgeMobile.classList.remove('hidden');
-            } else {
-                cartBadgeMobile.classList.add('hidden');
-            }
-        }
-    }
-</script>
-@endpush
 @endsection
