@@ -275,7 +275,7 @@
                                     <!-- Column 2 -->
                                     <div class="flex flex-col gap-3 md:gap-4">
                                         <h4 class="font-bold text-gray-200 text-sm md:text-base">Customer Service</h4>
-                                        <a href="#" class="text-gray-400 hover:text-white transition text-xs md:text-sm">Contact Us</a>
+                                        <a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition text-xs md:text-sm">Contact Us</a>
                                         <a href="#" class="text-gray-400 hover:text-white transition text-xs md:text-sm">Track Order</a>
                                         <a href="#" class="text-gray-400 hover:text-white transition text-xs md:text-sm">Returns</a>
                                         <a href="{{ route('faq') }}" class="text-gray-400 hover:text-white transition text-xs md:text-sm">FAQ</a>
