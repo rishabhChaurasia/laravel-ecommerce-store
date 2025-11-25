@@ -19,7 +19,7 @@
 6. [Installation](#installation)
 7. [Project Structure](#project-structure)
 8. [User Roles](#user-roles)
-9. [API Endpoints](#api-endpoints)
+9. [Routes](#routes)
 10. [Contributing](#contributing)
 11. [Security](#security)
 12. [License](#license)
@@ -31,13 +31,16 @@ LaraStore is a comprehensive e-commerce application built with Laravel 12. It pr
 ## Features
 
 ### Public Storefront
-- **Home Page**: Hero section, featured categories, and new arrivals section with caching
+- **Home Page**: Featured products and categories
 - **Product Catalog**: Filterable and sortable product listings with pagination
-- **Product Details**: Individual product pages with image gallery, description, reviews, and related products
-- **Shopping Cart**: Persistent cart functionality (both authenticated users and guest sessions)
+- **Product Details**: Individual product pages with detailed information
+- **Shopping Cart**: Persistent cart functionality for authenticated users
 - **Wishlist**: Ability to save favorite products for later
-- **Search & Filters**: Category filtering, price range filtering, and multiple sorting options
+- **Search & Filters**: Category filtering and multiple sorting options
 - **Product Reviews**: User-generated reviews and ratings system
+- **FAQ Page**: Frequently asked questions section
+- **Contact Page**: Contact form with thank you page
+- **Policies Page**: Terms of service, privacy policy, and other legal documents
 
 ### User Account Features
 - **Order History**: Track and view all past orders
@@ -59,20 +62,16 @@ LaraStore is a comprehensive e-commerce application built with Laravel 12. It pr
 - **Notification System**: Admin notifications for various events
 
 ### Shopping & Checkout
-- **Persistent Cart**: Database-stored cart for logged-in users and session-based for guests
-- **Cart Operations**: Add, update quantity, and remove items with AJAX support
-- **Coupon System**: Apply discount codes with validation (minimum amount, expiration, usage limits)
-- **Wishlist Integration**: Move items between cart and wishlist
-- **Secure Checkout Flow**: Multi-step checkout process with guest support
+- **Persistent Cart**: Database-stored cart for logged-in users
+- **Cart Operations**: Add, update quantity, and remove items
+- **Coupon System**: Apply discount codes with validation
+- **Wishlist Integration**: Add/remove items from wishlist
+- **Secure Checkout Flow**: Multi-step checkout process with shipping and payment
 - **Payment Processing**: Stripe integration via Laravel Cashier
-- **Order Finalization**: Database transactions to ensure data consistency
 
 ### Technical Features
-- **Caching**: Optimized performance with strategic caching of frequently accessed data
-- **Database Transactions**: Ensures data integrity during order processing
-- **Queue System**: Background job processing for email notifications
+- **Queue System**: Background job processing
 - **Responsive Design**: Mobile-first design using Tailwind CSS
-- **SEO Optimized**: Proper meta tags and URL structures
 - **Security**: CSRF protection, input validation, and authentication
 
 ## Technology Stack
@@ -135,21 +134,25 @@ app/
 ├── Http/
 │   ├── Controllers/
 │   │   ├── Admin/    # Admin panel controllers
+│   │   ├── Auth/     # Authentication controllers
 │   │   └── Shop/     # Public storefront controllers
 │   ├── Middleware/   # Custom middleware
 │   └── Requests/     # Form request validation
 ├── Jobs/             # Queueable jobs
+├── Listeners/        # Event listeners
+├── Mail/             # Mail classes
 ├── Models/           # Eloquent models
 ├── Notifications/    # Notification classes
+├── Observers/        # Model observers
 ├── Providers/        # Service providers
-└── Services/         # Business logic services
+└── View/             # View composers and helpers
 ```
 
 ### Controller Organization
 - **Admin Controllers**: Separate controllers for admin panel functionality
 - **Shop Controllers**: Controllers for public-facing features
+- **Auth Controllers**: Authentication-related controllers
 - **Resource Controllers**: Standard CRUD operations for entities
-- **API Controllers**: RESTful API endpoints
 
 ### Model Relationships
 - **Product ↔ Category**: Many-to-one relationship
@@ -262,17 +265,26 @@ composer run setup
 
 ### Guest User
 - Browse products and view details
-- Add items to cart (session-based)
-- Proceed to checkout (with optional account creation)
+- Access to FAQ and Contact pages
+- Proceed to checkout (with required account creation)
 
-## API Endpoints
+## Routes
 
 ### Public Routes
 - `GET /` - Home page
 - `GET /shop` - Product listing
-- `GET /product/{slug}` - Individual product page
+- `GET /product/{product:slug}` - Individual product page
+- `GET /faq` - FAQ page
+- `GET /contact-us` - Contact page
+- `POST /contact-us` - Send contact form
+- `GET /contact-us/thank-you` - Thank you page after contact form
+- `GET /policies/{policy}` - Policies pages (terms, privacy, etc.)
 
 ### Authenticated Routes
+- `GET /dashboard` - User dashboard
+- `GET /profile` - Profile management
+- `PATCH /profile` - Update profile
+- `DELETE /profile` - Delete profile
 - `POST /cart/add` - Add item to cart
 - `PATCH /cart/update` - Update cart item quantity
 - `DELETE /cart/remove` - Remove item from cart
@@ -282,7 +294,13 @@ composer run setup
 - `POST /wishlist/{product}` - Toggle wishlist item
 - `DELETE /wishlist/{product}` - Remove from wishlist
 
-### Checkout Routes
+### Account Routes (Authenticated)
+- `GET /account` - Account dashboard
+- `GET /account/orders` - Order history
+- `GET /account/orders/{order}` - Order details
+- `GET /account/wishlist` - Wishlist
+
+### Checkout Routes (Authenticated)
 - `GET /checkout` - Checkout review
 - `GET /checkout/shipping` - Shipping information
 - `POST /checkout/shipping` - Store shipping info
@@ -291,16 +309,41 @@ composer run setup
 - `POST /checkout/create-payment-intent` - Create Stripe payment intent
 - `GET /checkout/success/{order}` - Order confirmation
 
-### Admin Routes
+### Admin Routes (Authenticated & Admin Role)
 - `GET /admin/dashboard` - Admin dashboard
-- `GET/POST/PUT/DELETE /admin/products` - Product management
-- `GET/POST/PUT/DELETE /admin/categories` - Category management
-- `GET/POST/PUT/DELETE /admin/orders` - Order management
-- `GET/POST/PUT/DELETE /admin/users` - User management
-- `GET/POST/PUT/DELETE /admin/marketing/coupons` - Coupon management
-- `GET /admin/marketing/reports` - Analytics reports
-- `GET/POST/PUT/DELETE /admin/notifications` - Notification management
-- `GET/POST/PUT/DELETE /admin/reviews` - Review management
+- `GET/POST/PUT/PATCH/DELETE /admin/products` - Product management (resource routes)
+- `GET/POST/PUT/PATCH/DELETE /admin/categories` - Category management (resource routes)
+- `GET/POST/PUT/PATCH/DELETE /admin/users` - User management (resource routes)
+- `PUT /admin/users/{user}/toggle-status` - Toggle user status
+- `GET/POST/PUT/PATCH/DELETE /admin/orders` - Order management (resource routes)
+- `PUT /admin/orders/{order}/status` - Update order status
+- `GET /admin/marketing/coupons` - Coupon management index
+- `GET /admin/marketing/coupons/create` - Create coupon
+- `POST /admin/marketing/coupons` - Store coupon
+- `GET /admin/marketing/coupons/{coupon}/edit` - Edit coupon
+- `PUT /admin/marketing/coupons/{coupon}` - Update coupon
+- `DELETE /admin/marketing/coupons/{coupon}` - Delete coupon
+- `GET /admin/marketing/reports` - Analytics reports index
+- `GET /admin/marketing/reports/stock` - Stock reports
+- `GET /admin/marketing/reports/sales-data` - Sales data
+- `GET /admin/marketing/reports/conversion-rate` - Conversion rate
+- `GET /admin/marketing/reports/stock-data` - Stock data
+- `GET /admin/marketing/inventory` - Inventory management
+- `POST /admin/marketing/inventory/bulk-update-stock` - Bulk update stock
+- `POST /admin/marketing/inventory/bulk-update-status` - Bulk update status
+- `GET /admin/marketing/inventory/export` - Export products
+- `POST /admin/marketing/inventory/import` - Import products
+- `GET /admin/notifications` - Notification management index
+- `GET /admin/notifications/unread` - Unread notifications
+- `PUT /admin/notifications/{id}/read` - Mark notification as read
+- `PUT /admin/notifications/mark-all-read` - Mark all notifications as read
+- `DELETE /admin/notifications/{id}` - Delete notification
+- `GET /admin/reviews` - Review management index
+- `GET /admin/reviews/pending` - Pending reviews
+- `GET /admin/reviews/approved` - Approved reviews
+- `PUT /admin/reviews/{id}/approve` - Approve review
+- `PUT /admin/reviews/{id}/toggle-approval` - Toggle review approval
+- `DELETE /admin/reviews/{id}` - Reject review
 
 ## Contributing
 
