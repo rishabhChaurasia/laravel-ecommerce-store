@@ -66,6 +66,9 @@ class ProductController extends Controller
     public function toggleWishlist(Request $request, Product $product)
     {
         if (!Auth::check()) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
             return redirect()->route('login')->with('error', 'Please log in to add items to your wishlist.');
         }
 
@@ -84,7 +87,7 @@ class ProductController extends Controller
             $action = 'added';
         }
 
-        if ($request->ajax()) {
+        if ($request->expectsJson()) {
             return response()->json([
                 'status' => 'success',
                 'message' => $message,

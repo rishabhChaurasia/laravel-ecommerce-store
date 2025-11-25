@@ -32,30 +32,41 @@
                 </div>
                 
                 <!-- Price Filter -->
-                <div>
+                <div x-data="{ maxPrice: {{ request('max_price', 500) }} }">
                     <h2 class="text-lg font-bold leading-tight tracking-tight text-left pb-4 text-gray-900 dark:text-white">Price</h2>
-                    <div class="@container">
-                        <div class="relative flex w-full flex-col items-start justify-between gap-4">
-                            <div class="flex w-full shrink-[3] items-center justify-between">
-                                <p class="text-base font-medium text-gray-700 dark:text-gray-300">Up to</p>
-                                <p class="text-sm font-normal text-gray-600 dark:text-gray-400">$350</p>
-                            </div>
-                            <div class="flex h-4 w-full items-center">
-                                <div class="relative w-full h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full">
-                                    <div class="h-full rounded-full bg-primary" style="width: 70%;"></div>
-                                    <div class="absolute top-1/2 -translate-y-1/2" style="left: 70%; transform: translate(-50%, -50%);">
-                                        <div class="size-4 rounded-full bg-primary ring-2 ring-white dark:ring-dark-bg"></div>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">Up to</span>
+                            <span class="font-medium text-gray-900 dark:text-white" x-text="'$' + maxPrice"></span>
+                        </div>
+                        
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="500" 
+                            step="10"
+                            x-model="maxPrice"
+                            class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-gray-900 dark:accent-white"
+                        />
+                        
+                        <div class="flex gap-2">
+                            <button 
+                                @click="window.location.href='{{ route('shop.index', array_merge(request()->except('max_price'), ['max_price' => ''])) }}'.replace('max_price=', 'max_price=' + maxPrice)"
+                                class="flex-1 flex cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+                            >
+                                Apply
+                            </button>
+                            @if(request('max_price'))
+                                <a 
+                                    href="{{ route('shop.index', request()->except('max_price')) }}"
+                                    class="flex items-center justify-center rounded-md h-9 px-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                                >
+                                    Clear
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>
-                
-                <!-- Apply Filters Button -->
-                <button class="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-base font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors">
-                    Apply Filters
-                </button>
             </div>
         </aside>
         
@@ -100,7 +111,7 @@
             <!-- Product Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($products as $product)
-                    <div class="bg-white dark:bg-zinc-900 p-4 rounded-3xl  w-full flex flex-col items-center transition-all duration-300" x-data="{ wishlist: false }">
+                    <div class="bg-white dark:bg-zinc-900 p-4 rounded-3xl  w-full flex flex-col items-center transition-all duration-300" x-data="{ wishlist: {{ auth()->check() && $product->userWishlist(auth()->id()) ? 'true' : 'false' }} }">
                         <!-- Product Image Container -->
                         <div class="relative w-full mb-4">
                             <a href="{{ route('product.show', $product->slug) }}">
@@ -119,7 +130,27 @@
                             
                             <!-- Wishlist Button -->
                             <button 
-                                @click.prevent="wishlist = !wishlist"
+                                @click.prevent="
+                                    @auth
+                                        fetch('{{ route('wishlist.toggle', $product) }}', {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                'Accept': 'application/json',
+                                                'Content-Type': 'application/json'
+                                            }
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => { 
+                                            if (data.status === 'success') {
+                                                wishlist = data.action === 'added';
+                                            }
+                                        })
+                                        .catch(err => console.error('Wishlist error:', err))
+                                    @else
+                                        window.location.href = '{{ route('login') }}'
+                                    @endauth
+                                "
                                 class="absolute top-3 right-3 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm p-2 rounded-full transition-colors"
                                 :class="wishlist ? 'text-red-500' : 'text-zinc-600 dark:text-zinc-300 hover:text-red-500 dark:hover:text-red-500'"
                             >
