@@ -20,9 +20,7 @@
 7. [Project Structure](#project-structure)
 8. [User Roles](#user-roles)
 9. [Routes](#routes)
-10. [Contributing](#contributing)
-11. [Security](#security)
-12. [License](#license)
+10. [License](#license)
 
 ## About LaraStore
 
@@ -464,37 +462,6 @@ ABANDONED_CART_THIRD_DISCOUNT=10
 - Monitor opt-out rates for continuous improvement
 
 The abandoned cart recovery system is designed to seamlessly integrate with your existing e-commerce platform and provide immediate value in recovering lost sales while maintaining a positive customer experience.
-
-## Contributing
-
-Thank you for considering contributing to LaraStore! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Ensure all tests pass (`php artisan test`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### Development Workflow
-- Use PSR-12 coding standards
-- Write tests for new features
-- Document public methods and classes
-- Follow the existing code style
-
-## Security
-
-LaraStore takes security seriously. If you discover any security vulnerabilities, please send an email to [rishabh.78275@gmail.com](mailto:rishabh.78275@gmail.com) instead of using the issue tracker.
-
-### Security Features Implemented
-- CSRF protection on all forms
-- Input validation and sanitization
-- SQL injection prevention through Eloquent ORM
-- XSS prevention through Blade template escaping
-- Secure password hashing
-- Authentication middleware
-- Role-based access control
 
 ## License
 
