@@ -72,7 +72,7 @@ class TwoFactorController extends Controller
         }
 
         $secret = decrypt($user->two_factor_secret);
-        $valid = $this->google2fa->verifyKey($secret, $request->code, null, 4);
+        $valid = $this->google2fa->verifyKey($secret, $request->code, 8);
 
         if (!$valid) {
             throw ValidationException::withMessages([
@@ -99,13 +99,6 @@ class TwoFactorController extends Controller
 
         $user = $request->user();
 
-        // Prevent admin users from disabling 2FA (making it mandatory for admins)
-        if ($user->role === 'admin') {
-            throw ValidationException::withMessages([
-                'code' => ['Administrators cannot disable two-factor authentication.']
-            ]);
-        }
-
         if (!$user->two_factor_secret) {
             throw ValidationException::withMessages([
                 'code' => ['Two-factor authentication is not properly configured.']
@@ -113,7 +106,7 @@ class TwoFactorController extends Controller
         }
 
         $secret = decrypt($user->two_factor_secret);
-        $valid = $this->google2fa->verifyKey($secret, $request->code, null, 4);
+        $valid = $this->google2fa->verifyKey($secret, $request->code, 8);
 
         if (!$valid) {
             throw ValidationException::withMessages([
@@ -156,7 +149,7 @@ class TwoFactorController extends Controller
 
         $secret = decrypt($user->two_factor_secret);
         // Verify the code with a larger window to accommodate time differences
-        $valid = $this->google2fa->verifyKey($secret, $request->code, null, 4);
+        $valid = $this->google2fa->verifyKey($secret, $request->code, 8);
 
         if (!$valid) {
             // Check recovery codes if TOTP fails

@@ -14,7 +14,7 @@ The LaraStore application includes comprehensive security measures across multip
 - **Two-Factor Authentication (2FA)**: Enhanced security with TOTP-based authentication using Google Authenticator
   - QR code setup for easy configuration
   - Backup recovery codes for account access
-  - Mandatory 2FA for admin accounts (cannot be disabled)
+  
 - **Role-Based Permissions**: Advanced permission system beyond basic admin/user roles
   - Granular permissions for different admin roles (Super Admin, Product Manager, Order Manager, etc.)
   - Permission-based middleware for route protection
